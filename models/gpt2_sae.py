@@ -9,6 +9,8 @@ import math
 import torch.nn as nn
 from torch.nn.parameter import Parameter
 
+from models.llama_sae import SAEParams, init_sae_params
+
 def gelu(x):
     return 0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
 
@@ -124,11 +126,15 @@ class Block(nn.Module):
         return x, present
 
 class GPT2Model(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, sae_params: SAEParams):
         super(GPT2Model, self).__init__()
+
+
         self.n_layer = config.n_layer
         self.n_embd = config.n_embd
         self.n_vocab = config.vocab_size
+
+        init_sae_params(self, sae_params, self.n_embd)
 
         self.wte = nn.Embedding(config.vocab_size, config.n_embd)
         self.wpe = nn.Embedding(config.n_positions, config.n_embd)
@@ -165,12 +171,34 @@ class GPT2Model(nn.Module):
             token_type_embeds = 0
         hidden_states = inputs_embeds + position_embeds + token_type_embeds
         presents = []
-        for block, layer_past in zip(self.h, past):
-            hidden_states, present = block(hidden_states, layer_past)
-            presents.append(present)
+
+        mse_losses = 0
+        sparsity_penalty = 0
+        loss = torch.nn.MSELoss()
+        if self.sae_type is not None:
+            layer_list = list(zip(self.h, past))
+            for block, layer_past in layer_list[self.sae_layer:]:
+                hidden_states, present = block(hidden_states, layer_past)
+                presents.append(present)
+
+            h_sae, sparsity_penalty = self.sae(hidden_states)
+            if self.sae_type == "local":
+                mse_losses = loss(hidden_states, h_sae)
+
+            for block, layer_past in layer_list[:self.sae_layer]:
+                hidden_states, present = block(hidden_states, layer_past)
+                h_sae, _ = block(h_sae, layer_past)
+                presents.append(present)
+                if self.sae_type == "e2e + ds":
+                    mse_losses += loss(hidden_states, h_sae)
+        else:
+            for block, layer_past in zip(self.h, past):
+                hidden_states, present = block(hidden_states, layer_past)
+                presents.append(present)
+
         hidden_states = self.ln_f(hidden_states)
         output_shape = input_shape + (hidden_states.size(-1),)
-        return hidden_states.view(*output_shape), presents
+        return hidden_states.view(*output_shape), presents, (mse_losses, sparsity_penalty)
 
 class GPT2LMHead(nn.Module):
     def __init__(self, model_embeddings_weights, config):
@@ -190,9 +218,9 @@ class GPT2LMHead(nn.Module):
         return lm_logits
 
 class GPT2LMHeadModel(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, sae_params: SAEParams):
         super(GPT2LMHeadModel, self).__init__()
-        self.transformer = GPT2Model(config)
+        self.transformer = GPT2Model(config, sae_params)
         self.lm_head = GPT2LMHead(self.transformer.wte.weight, config)
 
     def set_tied(self):
@@ -201,10 +229,10 @@ class GPT2LMHeadModel(nn.Module):
         self.lm_head.set_embeddings_weights(self.transformer.wte.weight)
 
     def forward(self, input_ids, position_ids=None, token_type_ids=None, lm_labels=None, past=None):
-        hidden_states, presents = self.transformer(input_ids, position_ids, token_type_ids, past)
+        hidden_states, presents, losses = self.transformer(input_ids, position_ids, token_type_ids, past)
         lm_logits = self.lm_head(hidden_states)
         if lm_labels is not None:
             loss_fct = nn.CrossEntropyLoss(ignore_index=-1)
             loss = loss_fct(lm_logits.view(-1, lm_logits.size(-1)), lm_labels.view(-1))
             return loss
-        return lm_logits, presents
+        return lm_logits, presents, losses
