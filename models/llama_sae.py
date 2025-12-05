@@ -22,9 +22,6 @@ from sae import SAE_Local
 
 @dataclass
 class ModelArgs:
-    sae_layer: int
-    sae_dict_size: int
-
     dim: int = 4096
     n_layers: int = 32
     n_heads: int = 32
@@ -36,6 +33,9 @@ class ModelArgs:
 
     max_batch_size: int = 32
     max_seq_len: int = 2048
+
+    sae_layer: Optional[int] = None
+    sae_dict_size: Optional[int] = None
 
 
 class RMSNorm(torch.nn.Module):
@@ -440,7 +440,11 @@ class Transformer(nn.Module):
         self.params = params
     
         self.sae_layer = params.sae_layer
-        self.sae = SAE_Local(params.dim, params.sae_dict_size)
+        if self.sae_layer is not None:
+            assert self.sae_dict_size is not None, "sae_dict_size must be given a value if sae_layer has one"
+            self.sae = SAE_Local(params.dim, params.sae_dict_size)
+        else:
+            self.sae = lambda x: x
 
         self.vocab_size = params.vocab_size
         self.n_layers = params.n_layers
@@ -502,7 +506,7 @@ class Transformer(nn.Module):
         # adding the sae here
         for i, layer in enumerate(self.layers):
             h = layer(h, start_pos, freqs_cis, mask)
-            if i == self.sae_layer:
+            if self.sae_layer is not None and i == self.sae_layer:
                 h = self.sae(h)
 
         h = self.norm(h)
