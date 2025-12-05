@@ -7,9 +7,10 @@ import copy
 import torch
 import math
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.nn.parameter import Parameter
 
-from models.llama_sae import SAEParams, init_sae_params
+from .llama_sae import SAEParams, init_sae_params
 
 def gelu(x):
     return 0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
@@ -174,7 +175,6 @@ class GPT2Model(nn.Module):
 
         mse_losses = 0
         sparsity_penalty = 0
-        loss = torch.nn.MSELoss()
         if self.sae_type is not None:
             layer_list = list(zip(self.h, past))
             for block, layer_past in layer_list[self.sae_layer:]:
@@ -183,14 +183,14 @@ class GPT2Model(nn.Module):
 
             h_sae, sparsity_penalty = self.sae(hidden_states)
             if self.sae_type == "local":
-                mse_losses = loss(hidden_states, h_sae)
+                mse_losses = F.mse_loss(hidden_states, h_sae)
 
             for block, layer_past in layer_list[:self.sae_layer]:
                 hidden_states, present = block(hidden_states, layer_past)
                 h_sae, _ = block(h_sae, layer_past)
                 presents.append(present)
                 if self.sae_type == "e2e + ds":
-                    mse_losses += loss(hidden_states, h_sae)
+                    mse_losses += F.mse_loss(hidden_states, h_sae) / (len(layer_list) - self.sae_layer)  # number of layers after this
         else:
             for block, layer_past in zip(self.h, past):
                 hidden_states, present = block(hidden_states, layer_past)

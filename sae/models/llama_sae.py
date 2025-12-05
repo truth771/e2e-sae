@@ -17,7 +17,7 @@ from fairscale.nn.model_parallel.layers import (
 )
 from torch import nn
 
-from models.sae import SAE_Local
+from .sae import SAE_Local
 
 @dataclass
 class SAEParams:
@@ -515,7 +515,6 @@ class Transformer(nn.Module):
         # adding the sae here
         mse_losses = 0
         sparsity_penalty = 0
-        loss = torch.nn.MSELoss()
         if self.sae_type is not None:
             layer_list = list(self.layers)
             for layer in layer_list[:self.sae_layer]:
@@ -523,13 +522,13 @@ class Transformer(nn.Module):
 
             h_sae, sparsity_penalty = self.sae(h)
             if self.sae_type == "local":
-                mse_losses = loss(h, h_sae)
+                mse_losses = F.mse_loss(h, h_sae)
 
             for layer in layer_list[self.sae_layer:]:
                 h = layer(h)
                 h_sae = layer(h_sae)
                 if self.sae_type == "e2e + ds":
-                    mse_losses += loss(h, h_sae)
+                    mse_losses += F.mse_loss(h, h_sae) / (len(layer_list) - self.sae_layer)
         else:
             for layer in self.layers:
                 h = layer(h, start_pos, freqs_cis, mask)

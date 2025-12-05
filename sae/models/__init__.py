@@ -10,13 +10,13 @@ def get_model(model_type: Literal["gpt2", "llama"], sae_params: SAEParams):
         model = GPT2LMHeadModel(GPT2Config(), sae_params)
         state_dict = torch.load('gpt2-pytorch_model.bin', map_location='cpu' if not torch.cuda.is_available() else None)
         load_weight(model, state_dict)
+        unfreeze_parameters = model.transformer.sae.parameters()
     # elif model_type == "llama":
     #     pass
     else:
         raise ValueError("Expected one of 'gpt2' or 'llama' for model type.")
 
-    for param in model.parameters():
+    for param in unfreeze_parameters:
         param.requires_grad = False
 
-    for param in model.sae.parameters():
-        param.required_grad = True
+    return model, unfreeze_parameters
