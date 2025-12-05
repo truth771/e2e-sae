@@ -5,7 +5,7 @@
 
 import math
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Literal, Optional, Tuple
 
 import fairscale.nn.model_parallel.initialize as fs_init
 import torch
@@ -36,6 +36,7 @@ class ModelArgs:
 
     sae_layer: Optional[int] = None
     sae_dict_size: Optional[int] = None
+    sae_type: Optional[Literal["local", "e2e", "e2e + ds"]] = None
 
 
 class RMSNorm(torch.nn.Module):
@@ -439,9 +440,11 @@ class Transformer(nn.Module):
         super().__init__()
         self.params = params
     
-        self.sae_layer = params.sae_layer
-        if self.sae_layer is not None:
-            assert self.sae_dict_size is not None, "sae_dict_size must be given a value if sae_layer has one"
+        self.sae_type = params.sae_type
+        if params.sae_type is not None:
+            assert params.sae_layer is not None, "sae_layer must be given a value if sae_layer has one"
+            assert params.sae_dict_size is not None, "sae_dict_size must be given a value if sae_layer has one"
+            self.sae_layer = params.sae_layer
             self.sae = SAE_Local(params.dim, params.sae_dict_size)
         else:
             self.sae = lambda x: x
@@ -504,11 +507,27 @@ class Transformer(nn.Module):
             ]).type_as(h)
 
         # adding the sae here
-        for i, layer in enumerate(self.layers):
-            h = layer(h, start_pos, freqs_cis, mask)
-            if self.sae_layer is not None and i == self.sae_layer:
-                h = self.sae(h)
+        mse_losses = 0
+        sparsity_penalty = 0
+        loss = torch.nn.MSELoss()
+        if self.sae_type is not None:
+            layer_list = list(self.layers)
+            for layer in layer_list[:self.sae_layer + 1]:
+                h = layer(h, start_pos, freqs_cis, mask)
+
+            h_sae, sparsity_penalty = self.sae(h)
+            if self.sae_type == "local":
+                mse_losses = loss(h, h_sae)
+
+            for layer in layer_list[self.sae_layer + 1:]:
+                h = layer(h)
+                h_sae = layer(h_sae)
+                if self.sae_type == "e2e + ds":
+                    mse_losses += loss(h, h_sae)
+        else:
+            for layer in self.layers:
+                h = layer(h, start_pos, freqs_cis, mask)
 
         h = self.norm(h)
         output = self.output(h).float()
-        return output
+        return output, (mse_losses, sparsity_penalty)
