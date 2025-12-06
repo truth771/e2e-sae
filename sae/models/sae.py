@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import losses
+from . import losses
 
 class SAE_Local(nn.Module):
     """Sparse Autoencoder to reconstruct activations of a particular layer."""

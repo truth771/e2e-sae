@@ -19,8 +19,8 @@ def train(model_str: Literal["gpt2", "llama"], sae_params: SAEParams):
 
     for batch in train_loader:
         optimizer.zero_grad()
-        logits, *_, (mse_losses, sparsity_param) = normal_model(batch["input_ids"])
-        normal_logits, *_ = model(batch["input_ids"])
+        logits, *_, (mse_losses, sparsity_param) = model(batch["input_ids"])
+        normal_logits, *_ = normal_model(batch["input_ids"])
 
         kl_loss = F.kl_div(
             F.log_softmax(logits, dim=-1),
