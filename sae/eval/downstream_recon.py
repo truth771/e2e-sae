@@ -21,7 +21,7 @@ def eval_downstream_recon(model: nn.Module, dataloader: DataLoader, device: torc
         for batch in dataloader:
             input_ids: torch.Tensor = batch["input_ids"].to(device)
             
-            logits, presents, (mse_losses, sparsity_penalties) = model(input_ids=input_ids)
+            logits, presents, (mse_losses, _, sparsity_penalties) = model(input_ids=input_ids)
             num_tokens = input_ids.numel()
             total_mse += mse_losses.sum().item() * num_tokens
             total_sparsity += sparsity_penalties.sum().item() * num_tokens

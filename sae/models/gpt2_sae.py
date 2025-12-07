@@ -175,13 +175,14 @@ class GPT2Model(nn.Module):
 
         mse_losses = 0
         sparsity_penalty = 0
+        activations = 0
         if self.sae_type is not None:
             layer_list = list(zip(self.h, past))
             for block, layer_past in layer_list[self.sae_layer:]:
                 hidden_states, present = block(hidden_states, layer_past)
                 presents.append(present)
 
-            h_sae, sparsity_penalty = self.sae(hidden_states)
+            h_sae, activations, sparsity_penalty = self.sae(hidden_states)
             if self.sae_type == "local":
                 mse_losses = F.mse_loss(hidden_states, h_sae)
 
@@ -198,7 +199,7 @@ class GPT2Model(nn.Module):
 
         hidden_states = self.ln_f(hidden_states)
         output_shape = input_shape + (hidden_states.size(-1),)
-        return hidden_states.view(*output_shape), presents, (mse_losses, sparsity_penalty)
+        return hidden_states.view(*output_shape), presents, (mse_losses, activations, sparsity_penalty)
 
 class GPT2LMHead(nn.Module):
     def __init__(self, model_embeddings_weights, config):
