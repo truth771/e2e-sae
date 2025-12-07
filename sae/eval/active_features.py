@@ -2,6 +2,8 @@ import torch
 from torch.utils.data import DataLoader
 import torch.nn as nn
 
+
+tolerance = 0.0001
 def eval_l0(model: nn.Module, dataloader: DataLoader, device: torch.device) -> float:
     """Evaluate the average number of active features (L0 norm) in SAE."""
 
@@ -15,7 +17,7 @@ def eval_l0(model: nn.Module, dataloader: DataLoader, device: torch.device) -> f
 
             logits, presents, (mse_losses, activations, sparsity_penalties) = model(input_ids=input_ids)
             activations_flat = activations.view(activations.size(0), -1)
-            active_counts = (activations_flat != 0).sum(dim=1)
+            active_counts = (activations_flat.abs() > tolerance).sum(dim=1)
             total_active += active_counts.sum().item()
             total_datapoints += activations.size(0)
 
