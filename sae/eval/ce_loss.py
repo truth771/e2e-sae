@@ -9,8 +9,8 @@ def ce_loss_increase(original_preds: torch.Tensor, sae_preds: torch.Tensor, targ
     sae_preds_flat = sae_preds.view(-1, sae_preds.size(-1))
     targets_flat = targets.view(-1)
 
-    ce_original = nn.CrossEntropyLoss(original_preds_flat, targets_flat)
-    ce_sae = nn.CrossEntropyLoss(sae_preds_flat, targets_flat)
+    ce_original = F.cross_entropy(original_preds_flat, targets_flat)
+    ce_sae = F.cross_entropy(sae_preds_flat, targets_flat)
 
     increase = ce_sae - ce_original
 
