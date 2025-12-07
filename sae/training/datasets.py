@@ -24,7 +24,7 @@ class OpenWebTextConfig:
     # config for OpenWebText datasets
 
     tokenizer_name: str = "gpt2"
-    context_length: int = 1024
+    context_length: int = 1025
     cache_dir: Optional[str] = None
 
     val_fraction: float = 0.1
@@ -105,11 +105,11 @@ class OpenWebTextDataset(Dataset):
     def __getitem__(self, idx: int):
         start = idx * self.block_len
         end = start + self.block_len
-        input_ids = self.all_ids[start:end]
+        input_ids = self.all_ids[start:end - 1]
 
         # full attention over block
         attention_mask = torch.ones_like(input_ids, dtype=torch.long)
-        return {"input_ids": input_ids, "attention_mask": attention_mask}
+        return {"input_ids": input_ids, "attention_mask": attention_mask, "labels": self.all_ids[end]}
     
 
 
