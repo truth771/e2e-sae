@@ -49,6 +49,7 @@ class OpenWebTextDataset(Dataset):
         # CHANGE LATER TO REAL DATASET
 
         raw_dataset = load_dataset("roneneldan/TinyStories", split="train", cache_dir=config.cache_dir)
+        raw_dataset = raw_dataset.select(range(50000))
 
         # split
         num_total = len(raw_dataset)
