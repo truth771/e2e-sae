@@ -1,5 +1,6 @@
 from typing import Literal, Container
 
+from torch.utils.data import DataLoader
 import tqdm 
 import torch
 import torch.nn.functional as F
@@ -8,11 +9,8 @@ from ..models import get_model, SAEParams
 from .datasets import get_openwebtext_dataloaders, OpenWebTextConfig
 
 
-def train(model_str: Literal["gpt2", "llama"], sae_params: SAEParams, 
-          batch_size: int = 32, n_epochs: int = 20, checkpoint_epochs: Container = {},
-          sparsity_weight: float = 4.0, mse_weight: float = 2.5):
-
-    train_loader, _ = get_openwebtext_dataloaders(OpenWebTextConfig(), batch_size)
+def train(model_str: Literal["gpt2", "llama"], sae_params: SAEParams, train_loader: DataLoader,
+          n_epochs: int = 20, checkpoint_epochs: Container = {}, sparsity_weight: float = 4.0, mse_weight: float = 2.5):
 
     normal_model, _ = get_model(model_str, SAEParams())
     model, trainable_params = get_model(model_str, sae_params)
@@ -71,5 +69,6 @@ def train(model_str: Literal["gpt2", "llama"], sae_params: SAEParams,
         return model
 
 if __name__ == "__main__":
-    train("gpt2", SAEParams(6, 1000, "local"))
+    train_loader, _ = get_openwebtext_dataloaders(OpenWebTextConfig(), batch_size)
+    train("gpt2", SAEParams(6, 1000, "local"), train_loader)
 

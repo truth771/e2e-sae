@@ -7,7 +7,7 @@ from sae.eval.geometry import cross_type_similarity
 from sae.models import get_model, SAEParams
 from sae.training.train import train
 
-def plot_pareto_curves(model_str, sae_params: SAEParams, val_dataloader, device: torch.device):
+def plot_pareto_curves(model_str, sae_params: SAEParams, train_dataloader, val_dataloader, device: torch.device):
     sparsity_params = [10e-4, 10e-3, 10e-2, 10e-1, 10e0, 10e1]
     sae_types = ["local", "e2e", "e2e + ds"]
 
@@ -19,7 +19,7 @@ def plot_pareto_curves(model_str, sae_params: SAEParams, val_dataloader, device:
     for sae_type in sae_types:
         sae_params.sae_type = sae_type
         for sp in sparsity_params:
-            model = train(model_str=model_str, sae_params=sae_params, sparsity_weight=sp, n_epochs=1)
+            model = train(model_str=model_str, sae_params=sae_params, train_loader=train_dataloader, sparsity_weight=sp, n_epochs=1)
             ce_losses[sae_type].append(eval_ce_loss_increase(normal_model, model, val_dataloader, device))
             l0, act = eval_l0_and_active_features(model, val_dataloader, device)
             active_features[sae_type].append(act)
