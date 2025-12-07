@@ -178,20 +178,22 @@ class GPT2Model(nn.Module):
         activations = 0
         if self.sae_type is not None:
             layer_list = list(zip(self.h, past))
-            for block, layer_past in layer_list[self.sae_layer:]:
+            for block, layer_past in layer_list[:self.sae_layer]:
                 hidden_states, present = block(hidden_states, layer_past)
                 presents.append(present)
 
             h_sae, activations, sparsity_penalty = self.sae(hidden_states)
-            if self.sae_type == "local":
-                mse_losses = F.mse_loss(hidden_states, h_sae)
+            hidden_states, h_old = h_sae, hidden_states
 
-            for block, layer_past in layer_list[:self.sae_layer]:
+            if self.sae_type == "local":
+                mse_losses = F.mse_loss(hidden_states, h_old)
+
+            for block, layer_past in layer_list[self.sae_layer:]:
                 hidden_states, present = block(hidden_states, layer_past)
-                h_sae, _ = block(h_sae, layer_past)
                 presents.append(present)
                 if self.sae_type == "e2e + ds":
-                    mse_losses += F.mse_loss(hidden_states, h_sae) / (len(layer_list) - self.sae_layer)  # number of layers after this
+                    h_old, _ = block(h_old, layer_past)
+                    mse_losses += F.mse_loss(hidden_states, h_old) / (len(layer_list) - self.sae_layer)  # number of layers after this
         else:
             for block, layer_past in zip(self.h, past):
                 hidden_states, present = block(hidden_states, layer_past)
