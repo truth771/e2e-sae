@@ -47,7 +47,8 @@ class OpenWebTextDataset(Dataset):
 
         # load raw openwebtext dataset 
         # CHANGE LATER TO REAL DATASET
-        raw_dataset = load_dataset("wikitext","wikitext-2-raw-v1", split="train", cache_dir=config.cache_dir)
+
+        raw_dataset = load_dataset("roneneldan/TinyStories", "TinyStories-1M", split="train", cache_dir=config.cache_dir)
         raw_dataset = raw_dataset.select(range(5000))
 
         # split
