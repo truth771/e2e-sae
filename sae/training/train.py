@@ -66,8 +66,8 @@ def train(model_str: Literal["gpt2", "llama"], sae_params: SAEParams,
                 total_loss.backward()
                 optimizer.step()
             if epoch in checkpoint_epochs:
-                torch.save(model.state_dict(), f"model-{sae_params.sae_layer}-{sae_params.sae_dict_size}-{sae_params.sae_type}-epoch-{epoch}.pth")
-    except KeyboardInterrupt:
+                torch.save(model.state_dict(), f"model-{sae_params.sae_layer}-{sae_params.sae_dict_size}-{sae_params.sae_type}-sp{sparsity_weight}-mse{mse_weight}-epoch-{epoch}.pth")
+    finally:
         return model
 
 if __name__ == "__main__":
