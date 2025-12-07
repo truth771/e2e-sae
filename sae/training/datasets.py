@@ -109,7 +109,7 @@ class OpenWebTextDataset(Dataset):
 
         # full attention over block
         attention_mask = torch.ones_like(input_ids, dtype=torch.long)
-        return {"input_ids": input_ids, "attention_mask": attention_mask, "labels": self.all_ids[end - 1]}
+        return {"input_ids": input_ids, "attention_mask": attention_mask, "labels": self.all_ids[start + 1:end]}
     
 
 

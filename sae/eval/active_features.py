@@ -19,7 +19,7 @@ def eval_l0(model: nn.Module, dataloader: DataLoader, device: torch.device) -> f
             activations_flat = activations.view(activations.size(0), -1)
             active_counts = (activations_flat.abs() > tolerance).sum(dim=1)
             total_active += active_counts.sum().item()
-            total_datapoints += activations.size(0)
+            total_datapoints += activations.size(0) * activations.size(1)  # batch size * context length
 
     if total_datapoints == 0:
         return 0.0
