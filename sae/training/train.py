@@ -36,12 +36,20 @@ def train(model_str: Literal["gpt2", "llama"], sae_params: SAEParams,
                 logits, *_, (mse_losses, _, sparsity_param) = model(batch["input_ids"].to(device))
                 normal_logits, *_ = normal_model(batch["input_ids"].to(device))
 
-                kl_loss = F.kl_div(
-                    F.log_softmax(logits, dim=-1),
-                    F.log_softmax(normal_logits, dim=-1),
-                    log_target=True,
-                    reduction="batchmean",
-                )
+                kl_loss = 0
+                if sae_params.sae_type != "local":
+                    kl_loss = F.kl_div(
+                        F.log_softmax(logits, dim=-1),
+                        F.log_softmax(normal_logits, dim=-1),
+                        log_target=True,
+                        reduction="batchmean",
+                    )
+                    assert kl_loss.requires_grad and kl_loss.grad_fn is not None
+
+                assert sparsity_param.requires_grad and sparsity_param.grad_fn is not None
+
+                if sae_params.sae_type != "e2e":
+                    assert mse_losses.requires_grad and mse_losses.grad_fn is not None
 
                 match sae_params.sae_type:
                     case "e2e":
@@ -49,7 +57,7 @@ def train(model_str: Literal["gpt2", "llama"], sae_params: SAEParams,
                     case "e2e + ds":
                         total_loss = kl_loss + sparsity_weight * sparsity_param + mse_weight * mse_losses
                     case "local":
-                        total_loss = mse_losses
+                        total_loss = sparsity_weight * sparsity_param + mse_weight * mse_losses
                     case _:
                         raise ValueError("Unexpected sae_type encountered.")
 
