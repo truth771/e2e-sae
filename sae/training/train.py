@@ -22,6 +22,8 @@ def train(model_str: Literal["gpt2", "llama"], sae_params: SAEParams,
     except:
         print("WARNING: running model on CPU")
     try:
+
+        device = trainable_params[0].device
         
         sparsity_weight = 4.0
         mse_weight = 2.5
@@ -31,8 +33,8 @@ def train(model_str: Literal["gpt2", "llama"], sae_params: SAEParams,
         for epoch in range(n_epochs):
             for batch in tqdm.tqdm(train_loader, desc=f"epoch {epoch + 1}"):
                 optimizer.zero_grad()
-                logits, *_, (mse_losses, _, sparsity_param) = model(batch["input_ids"])
-                normal_logits, *_ = normal_model(batch["input_ids"])
+                logits, *_, (mse_losses, _, sparsity_param) = model(batch["input_ids"].to(device))
+                normal_logits, *_ = normal_model(batch["input_ids"].to(device))
 
                 kl_loss = F.kl_div(
                     F.log_softmax(logits, dim=-1),
