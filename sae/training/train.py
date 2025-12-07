@@ -16,7 +16,7 @@ def train(model_str: Literal["gpt2", "llama"], sae_params: SAEParams,
     normal_model, _ = get_model(model_str, SAEParams())
     model, trainable_params = get_model(model_str, sae_params)
 
-    print(trainable_params[0].device())
+    print(trainable_params[0].device)
     
     sparsity_weight = 4.0
     mse_weight = 2.5
