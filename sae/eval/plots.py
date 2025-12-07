@@ -15,13 +15,14 @@ def plot_pareto_curve(model_str, sae_params: SAEParams, val_dataloader, device: 
     for sae_type in sae_types:
         ce_losses = []
         active_features = []
+        l0_norms = []
         sae_params.sae_type = sae_type
         for sp in sparsity_params:
-            model = train(model_str=model_str, sae_params=sae_params, sparsity_weight=sp)
-            ce_loss = evaluate_ce_loss_increase(model, val_dataloader, device)
-            l0_norm = eval_l0(model, val_dataloader, device)
-            ce_losses.append(ce_loss)
-            active_features.append(l0_norm)
+            model = train(model_str=model_str, sae_params=sae_params, sparsity_weight=sp, n_epochs=1)
+            ce_losses.append(evaluate_ce_loss_increase(model, val_dataloader, device))
+            l0, act = eval_l0_and_active_features(model, val_dataloader, device)
+            active_features.append(act)
+            l0_norms.append(l0)
         plt.plot(active_features, ce_losses, marker='o', label=sae_type)
 
     plt.xlabel('L0')
