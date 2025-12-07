@@ -53,4 +53,5 @@ def plot_cosine_similarity(model1: str, model2: str, d_source: torch.Tensor, d_t
     plt.xlabel('Cosine Similarity')
     plt.ylabel(model1 + ' to ' + model2 + ' Dictionary Similarity')
     plt.title('Cosine Similarity between Source and Target Dictionaries')
+    plt.savefig(f"cosine_similarity_{model1}_to_{model2}.png")
     plt.show()
