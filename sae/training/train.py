@@ -13,6 +13,7 @@ def train(model_str: Literal["gpt2", "llama"], sae_params: SAEParams,
           sparsity_weight: float = 4.0, mse_weight: float = 2.5):
 
     train_loader, _ = get_openwebtext_dataloaders(OpenWebTextConfig(), batch_size)
+
     normal_model, _ = get_model(model_str, SAEParams())
     model, trainable_params = get_model(model_str, sae_params)
 
@@ -65,6 +66,8 @@ def train(model_str: Literal["gpt2", "llama"], sae_params: SAEParams,
 
                 total_loss.backward()
                 optimizer.step()
+                model.transformer.sae.normalize_dictionary()
+
             if epoch in checkpoint_epochs:
                 torch.save(model.state_dict(), f"model-{sae_params.sae_layer}-{sae_params.sae_dict_size}-{sae_params.sae_type}-sp{sparsity_weight}-mse{mse_weight}-epoch-{epoch}.pth")
     finally:
