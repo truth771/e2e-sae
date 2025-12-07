@@ -5,12 +5,10 @@ import torch.nn.functional as F
 
 
 def ce_loss_increase(original_preds: torch.Tensor, sae_preds: torch.Tensor, targets: torch.Tensor) -> tuple[float, float, float]:
-    original_preds_flat = original_preds.view(-1, original_preds.size(-1))
-    sae_preds_flat = sae_preds.view(-1, sae_preds.size(-1))
     targets_flat = targets.view(-1)
 
-    ce_original = F.cross_entropy(original_preds_flat, targets_flat)
-    ce_sae = F.cross_entropy(sae_preds_flat, targets_flat)
+    ce_original = F.cross_entropy(original_preds[:, -1, :], targets_flat)
+    ce_sae = F.cross_entropy(sae_preds[:, -1, :], targets_flat)
 
     increase = ce_sae - ce_original
 
