@@ -42,7 +42,7 @@ class SAE_Local(nn.Module):
     def forward(self, x):
         z = F.relu(self.encoder(x))
         x_reconstructed = self.decoder(z)
-        return x_reconstructed, z, losses.l1_penalty(z, self.phi * x.size(-1), x.size(-1))
+        return x_reconstructed, z, losses.l1_penalty(z, 1, x.size(-1))[0]
     
     def loss(self, x, z, x_reconstructed):
         return F.mse_loss(x_reconstructed, x) + self.phi * torch.mean(z)
