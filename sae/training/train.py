@@ -28,9 +28,6 @@ def train(model_str: Literal["gpt2", "llama"], sae_params: SAEParams,
 
         device = trainable_params[0].device
         
-        sparsity_weight = 4.0
-        mse_weight = 2.5
-
         optimizer = torch.optim.Adam(trainable_params, lr=0.005)
 
         for epoch in range(n_epochs):
