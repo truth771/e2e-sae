@@ -15,6 +15,8 @@ def train(model_str: Literal["gpt2", "llama"], sae_params: SAEParams,
     train_loader, _ = get_openwebtext_dataloaders(OpenWebTextConfig(), batch_size)
     normal_model, _ = get_model(model_str, SAEParams())
     model, trainable_params = get_model(model_str, sae_params)
+
+    print(model.device())
     
     sparsity_weight = 4.0
     mse_weight = 2.5
