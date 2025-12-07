@@ -15,7 +15,7 @@ def eval_l0_and_active_features(model: nn.Module, dataloader: DataLoader, device
 
     batch = next(iter(dataloader))
     _, _, (_, activations, _) = model(input_ids=batch["input_ids"].to(device))
-    active_features = torch.zeros(activations.shape[-1])
+    active_features = torch.zeros(activations.shape[-1]).to(device)
 
     with torch.no_grad():
         for batch in dataloader:
