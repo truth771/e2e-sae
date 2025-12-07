@@ -18,7 +18,10 @@ def get_model(model_type: Literal["gpt2", "llama"], sae_params: SAEParams):
     else:
         raise ValueError("Expected one of 'gpt2' or 'llama' for model type.")
 
-    for param in unfreeze_parameters:
+    for param in model.parameters():
         param.requires_grad = False
+
+    for param in unfreeze_parameters:
+        param.requires_grad = True
 
     return model, unfreeze_parameters

@@ -16,6 +16,8 @@ def train(model_str: Literal["gpt2", "llama"], sae_params: SAEParams,
     normal_model, _ = get_model(model_str, SAEParams())
     model, trainable_params = get_model(model_str, sae_params)
 
+    model.train()
+
     try:
         model.to("cuda")
         normal_model.to("cuda")
