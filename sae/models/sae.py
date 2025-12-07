@@ -1,7 +1,26 @@
+from typing import Optional, Literal
+from dataclasses import dataclass
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from . import losses
+
+@dataclass
+class SAEParams:
+    sae_layer: Optional[int] = None
+    sae_dict_size: Optional[int] = None
+    sae_type: Optional[Literal["local", "e2e", "e2e + ds"]] = None
+
+def init_sae_params(self, sae_params, dim):
+    self.sae_type = sae_params.sae_type
+    if sae_params.sae_type is not None:
+        assert sae_params.sae_layer is not None, "sae_layer must be given a value if sae_layer has one"
+        assert sae_params.sae_dict_size is not None, "sae_dict_size must be given a value if sae_layer has one"
+        self.sae_layer = sae_params.sae_layer
+        self.sae = SAE_Local(dim, sae_params.sae_dict_size)
+    else:
+        self.sae = lambda x: x
+
 
 class SAE_Local(nn.Module):
     """Sparse Autoencoder to reconstruct activations of a particular layer."""

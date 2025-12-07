@@ -16,40 +16,47 @@ def train(model_str: Literal["gpt2", "llama"], sae_params: SAEParams,
     normal_model, _ = get_model(model_str, SAEParams())
     model, trainable_params = get_model(model_str, sae_params)
 
-    print(trainable_params[0].device)
-    
-    sparsity_weight = 4.0
-    mse_weight = 2.5
+    try:
+        model.to("cuda")
+        normal_model.to("cuda")
+    except:
+        print("WARNING: running model on CPU")
+    try:
+        
+        sparsity_weight = 4.0
+        mse_weight = 2.5
 
-    optimizer = torch.optim.Adam(trainable_params, lr=0.005)
+        optimizer = torch.optim.Adam(trainable_params, lr=0.005)
 
-    for epoch in range(n_epochs):
-        for batch in tqdm.tqdm(train_loader, desc=f"epoch {epoch + 1}"):
-            optimizer.zero_grad()
-            logits, *_, (mse_losses, _, sparsity_param) = model(batch["input_ids"])
-            normal_logits, *_ = normal_model(batch["input_ids"])
+        for epoch in range(n_epochs):
+            for batch in tqdm.tqdm(train_loader, desc=f"epoch {epoch + 1}"):
+                optimizer.zero_grad()
+                logits, *_, (mse_losses, _, sparsity_param) = model(batch["input_ids"])
+                normal_logits, *_ = normal_model(batch["input_ids"])
 
-            kl_loss = F.kl_div(
-                F.log_softmax(logits, dim=-1),
-                F.log_softmax(normal_logits, dim=-1),
-                log_target=True,
-                reduction="batchmean",
-            )
+                kl_loss = F.kl_div(
+                    F.log_softmax(logits, dim=-1),
+                    F.log_softmax(normal_logits, dim=-1),
+                    log_target=True,
+                    reduction="batchmean",
+                )
 
-            match sae_params.sae_type:
-                case "e2e":
-                    total_loss = kl_loss + sparsity_weight * sparsity_param
-                case "e2e + ds":
-                    total_loss = kl_loss + sparsity_weight * sparsity_param + mse_weight * mse_losses
-                case "local":
-                    total_loss = mse_losses
-                case _:
-                    raise ValueError("Unexpected sae_type encountered.")
+                match sae_params.sae_type:
+                    case "e2e":
+                        total_loss = kl_loss + sparsity_weight * sparsity_param
+                    case "e2e + ds":
+                        total_loss = kl_loss + sparsity_weight * sparsity_param + mse_weight * mse_losses
+                    case "local":
+                        total_loss = mse_losses
+                    case _:
+                        raise ValueError("Unexpected sae_type encountered.")
 
-            total_loss.backward()
-            optimizer.step()
-        if epoch in checkpoint_epochs:
-            torch.save(model.state_dict(), f"model-{sae_params.sae_layer}-{sae_params.sae_dict_size}-{sae_params.sae_type}-epoch-{epoch}.pth")
+                total_loss.backward()
+                optimizer.step()
+            if epoch in checkpoint_epochs:
+                torch.save(model.state_dict(), f"model-{sae_params.sae_layer}-{sae_params.sae_dict_size}-{sae_params.sae_type}-epoch-{epoch}.pth")
+    except KeyboardInterrupt:
+        return model
 
 if __name__ == "__main__":
     train("gpt2", SAEParams(6, 1000, "local"))
