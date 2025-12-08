@@ -13,7 +13,7 @@ def  l1_penalty(z: torch.Tensor, lambdas: float, d_hidden: int) -> Tuple[torch.T
         l1_raw: mean(|z|) without scaling 
     """
     phi = lambdas / float(d_hidden)
-    l1_raw = z.abs().mean()
+    l1_raw = z.norm(p=1, dim=-1).mean()
     l1_term = phi * l1_raw
     return l1_term, l1_raw
 
