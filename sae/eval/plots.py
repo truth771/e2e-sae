@@ -60,7 +60,7 @@ def plot_self_similarity(model: str, d_source):
     similarities = in_dictionary_cos(d_source)
 
     plt.figure()
-    plt.hist(similarities["best_match_cos"].cpu().numpy(), bins=50)
+    plt.hist(similarities["max_nn_cos"].cpu().numpy(), bins=50)
     plt.xlabel('Cosine Similarity')
     plt.ylabel(model + ' to ' + model + ' Dictionary Similarity')
     plt.title('Cosine Similarity between Source and Target Dictionaries')
