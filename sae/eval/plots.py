@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from sae.eval.ce_loss import eval_ce_loss_increase
 from sae.eval.active_features import eval_l0_and_active_features
-from sae.eval.geometry import cross_type_similarity
+from sae.eval.geometry import cross_type_similarity, in_dictionary_cos
 from sae.models import get_model, SAEParams
 from sae.training.train import train
 
@@ -54,4 +54,15 @@ def plot_cosine_similarity(model1: str, model2: str, d_source: torch.Tensor, d_t
     plt.ylabel(model1 + ' to ' + model2 + ' Dictionary Similarity')
     plt.title('Cosine Similarity between Source and Target Dictionaries')
     plt.savefig(f"cosine_similarity_{model1}_to_{model2}.png")
+    plt.show()
+
+def plot_self_similarity(model: str, d_source):
+    similarities = in_dictionary_cos(d_source)
+
+    plt.figure()
+    plt.hist(similarities["best_match_cos"].cpu().numpy(), bins=50)
+    plt.xlabel('Cosine Similarity')
+    plt.ylabel(model + ' to ' + model + ' Dictionary Similarity')
+    plt.title('Cosine Similarity between Source and Target Dictionaries')
+    plt.savefig(f"cosine_similarity_{model}_to_{model}.png")
     plt.show()
