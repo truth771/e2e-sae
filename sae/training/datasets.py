@@ -39,7 +39,7 @@ class OpenWebTextDataset(Dataset):
     # Flattened, tokenized OpenWebText dataset cut into fixed length blocks
     # each get returns {input_ID: attention_mask}
 
-    def __init__(self, split: str, config: OpenWebTextConfig):
+    def __init__(self, split: str, config: OpenWebTextConfig, dataset_name: str):
         assert split in {"train", "val"}, "split must be train or val"
 
         self.config = config
@@ -48,7 +48,7 @@ class OpenWebTextDataset(Dataset):
         # load raw openwebtext dataset 
         # CHANGE LATER TO REAL DATASET
 
-        raw_dataset = load_dataset("roneneldan/TinyStories", split="train", cache_dir=config.cache_dir)
+        raw_dataset = load_dataset(dataset_name, split="train", cache_dir=config.cache_dir)
         raw_dataset = raw_dataset.select(range(50000))
 
         # split
@@ -113,9 +113,9 @@ class OpenWebTextDataset(Dataset):
     
 
 
-def get_openwebtext_dataloaders(config: OpenWebTextConfig, batch_size: int, num_workers: int = 0, pin_memory: bool = True) -> Tuple[DataLoader, DataLoader]:
-    train_dataset = OpenWebTextDataset(split="train", config=config)
-    val_dataset = OpenWebTextDataset(split="val", config=config)
+def get_openwebtext_dataloaders(config: OpenWebTextConfig, batch_size: int, num_workers: int = 0, pin_memory: bool = True, dataset_name: str = "roneneldan/TinyStories") -> Tuple[DataLoader, DataLoader]:
+    train_dataset = OpenWebTextDataset(split="train", config=config, dataset_name=dataset_name)
+    val_dataset = OpenWebTextDataset(split="val", config=config, dataset_name=dataset_name)
 
     train_loader = DataLoader(
         train_dataset,
