@@ -37,8 +37,8 @@ def train(model_str: Literal["gpt2", "llama"], sae_params: SAEParams, train_load
                 kl_loss = 0
                 if sae_params.sae_type != "local":
                     kl_loss = F.kl_div(
-                        F.log_softmax(logits, dim=-1),
-                        F.log_softmax(normal_logits, dim=-1),
+                        F.log_softmax(logits.view(-1, logits.shape[-1]), dim=-1),
+                        F.log_softmax(normal_logits.view(-1, normal_logits.shape[-1]), dim=-1),
                         log_target=True,
                         reduction="batchmean",
                     )

@@ -8,7 +8,7 @@ from sae.models import get_model, SAEParams
 from sae.training.train import train
 
 def plot_pareto_curves(model_str, sae_params: SAEParams, train_dataloader, val_dataloader, device: torch.device):
-    sparsity_params = [10e-4, 10e-3, 10e-2, 10e-1, 10e0, 10e1]
+    sparsity_params = [10e-4, 10e-2, 10e0, 10e1]
     sae_types = ["local", "e2e", "e2e + ds"]
 
     normal_model = get_model('gpt2', SAEParams())[0].to(device)
