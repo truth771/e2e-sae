@@ -6,7 +6,7 @@ import torch.nn.functional as F
 def normalize(d: torch.Tensor) -> torch.Tensor:
     # l2 normalization of a dictionary d
     i = 1e-8
-    norms = d.norms(p=2, dim=1, keepdim=True).clamp_min(i)
+    norms = d.norm(p=2, dim=1, keepdim=True).clamp_min(i)
     return d / norms
 
 
